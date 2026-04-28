@@ -1,12 +1,12 @@
 # pyCheck2 Printer
 
-A native macOS replacement for Yardi's `ycheck2.exe` check-printing application. Instead of running the original Windows program through Wine, pyCheck2 parses the `.ycheck2` file format directly and renders checks to any macOS printer using Python and PySide6.
+A cross-platform replacement for Yardi's `ycheck2.exe` check-printing application. Instead of running the original Windows program through Wine, pyCheck2 parses the `.ycheck2` file format directly and renders checks to any printer using Python and PySide6. Runs on macOS, Windows, and Linux.
 
 ---
 
 ## Features
 
-- **Native macOS printing** — no Wine, no Windows emulation. Sends check print jobs directly to any printer visible on your Mac.
+- **Native printing on any platform** — no Wine, no Windows emulation. Sends check print jobs directly to any printer visible on your system.
 - **Check list with selection** — loads all checks from a `.ycheck2` file and displays them in a list (Date, Check #, Payable To, Total). Check or uncheck individual checks before printing.
 - **Running total** — the total dollar amount of all selected checks updates live as you check or uncheck items.
 - **Custom default printer** — choose your check printer from a dropdown and save it as the default. The selection persists between sessions.
