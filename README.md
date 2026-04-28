@@ -23,16 +23,32 @@ A cross-platform replacement for Yardi's `ycheck2.exe` check-printing applicatio
 
 ## Requirements
 
-- macOS (tested on macOS 14+)
 - Python 3.11+
 - PySide6
+
+### Installing Python
+
+**macOS** — Download the installer from [python.org/downloads](https://www.python.org/downloads/) and run it, or install via Homebrew:
+```bash
+brew install python
+```
+
+**Windows** — Download the installer from [python.org/downloads](https://www.python.org/downloads/). During installation, make sure to check **"Add Python to PATH"** before clicking Install.
+
+**Linux** — You probably already know what to do.
 
 ### Install dependencies
 
 ```bash
 python3 -m venv .venv
+
+# macOS / Linux
 source .venv/bin/activate
-pip install PySide6
+
+# Windows
+.venv\Scripts\activate
+
+pip install -r requirements.txt
 ```
 
 ---
