@@ -26,8 +26,12 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QRectF
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
-from PySide6.QtGui import QPainter, QFont, QPageSize, QPageLayout
-from PySide6.QtCore import Qt, QRectF
+from PySide6.QtGui import QPainter, QFont, QPageSize, QPageLayout, QFontDatabase
+
+# GnuMICR font bundled alongside this script (GPL-2, Eric Sandeen)
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+MICR_FONT_PATH = os.path.join(_SCRIPT_DIR, "fonts", "GnuMICR.ttf")
+MICR_FONT_FAMILY = "GnuMICR"
 
 PASSWORD = b'*6-/&c-qHUp =p*!*4U@8xF=(|:!+f'
 
@@ -280,7 +284,7 @@ def render_pages(pages, printer, copies_only=False):
             if op["cmd"] == "NonNegotiable" and not copies_only:
                 continue
             fname = (
-                "Courier New"
+                MICR_FONT_FAMILY
                 if op["font_name"].lower() == "advmicr"
                 else op["font_name"]
             )
@@ -653,6 +657,11 @@ class PrinterWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    # Load bundled GnuMICR font so MICR lines render with proper symbols
+    if os.path.exists(MICR_FONT_PATH):
+        QFontDatabase.addApplicationFont(MICR_FONT_PATH)
+
     win = PrinterWindow()
     win.resize(700, 560)
     screen = app.primaryScreen().geometry()
