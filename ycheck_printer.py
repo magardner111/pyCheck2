@@ -28,10 +28,17 @@ from PySide6.QtCore import Qt, QRectF
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from PySide6.QtGui import QPainter, QFont, QPageSize, QPageLayout, QFontDatabase
 
-# GnuMICR font bundled alongside this script (GPL-2, Eric Sandeen)
+# AdvMICR font extracted from the Wine ycheck install — exact match for the
+# font the VB6 app was designed for.  Falls back to GnuMICR if not present.
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MICR_FONT_PATH = os.path.join(_SCRIPT_DIR, "fonts", "GnuMICR.ttf")
-MICR_FONT_FAMILY = "GnuMICR"
+_ADVMICR_PATH = os.path.join(_SCRIPT_DIR, "fonts", "AdvMICR.ttf")
+_GNUMICR_PATH = os.path.join(_SCRIPT_DIR, "fonts", "GnuMICR.ttf")
+if os.path.exists(_ADVMICR_PATH):
+    MICR_FONT_PATH = _ADVMICR_PATH
+    MICR_FONT_FAMILY = "AdvMICR"
+else:
+    MICR_FONT_PATH = _GNUMICR_PATH
+    MICR_FONT_FAMILY = "GnuMICR"
 
 PASSWORD = b'*6-/&c-qHUp =p*!*4U@8xF=(|:!+f'
 
