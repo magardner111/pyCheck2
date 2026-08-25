@@ -24,9 +24,9 @@ from PySide6.QtWidgets import (
     QTreeWidget, QTreeWidgetItem, QAbstractItemView, QHeaderView,
     QDialog, QLineEdit, QCompleter,
 )
-from PySide6.QtCore import Qt, QRectF
+from PySide6.QtCore import Qt, QRectF, QLineF
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
-from PySide6.QtGui import QPainter, QFont, QPageSize, QPageLayout, QFontDatabase
+from PySide6.QtGui import QPainter, QFont, QPen, QPageSize, QPageLayout, QFontDatabase
 
 # AdvMICR font extracted from the Wine ycheck install — exact match for the
 # font the VB6 app was designed for.  Falls back to GnuMICR if not present.
@@ -48,6 +48,17 @@ TWIPS_TO_PT = 72.0 / 1440.0
 # Logical page size in points (8.5 × 11 inches)
 PAGE_W = 612.0
 PAGE_H = 792.0
+
+# Signature line.  Yardi never sends this — the original ycheck2.exe has no
+# line-drawing code at all, and would only place a signature on the check by
+# drawing a PaintPicture image shipped inside the .ycheck2 file.  None of our
+# check files carry one, so this draws the line ourselves.  All values are VB6
+# points, matching the parsed draw ops: the memo line sits at y=434 and the
+# MICR line at y=466, so 452 lands between them.
+SIG_LINE_X1 = 340.0
+SIG_LINE_X2 = 560.0
+SIG_LINE_Y = 452.0
+SIG_LINE_WIDTH = 0.75      # pen width in points
 
 SETTINGS_PATH = os.path.expanduser("~/.ycheck_printer_settings.json")
 HISTORY_CSV = os.path.expanduser("~/.ycheck_print_history.csv")
@@ -263,7 +274,26 @@ def extract_unique_pages(ycheck2_path):
 # Rendering
 # ---------------------------------------------------------------------------
 
-def render_pages(pages, printer, copies_only=False):
+def _draw_signature_line(painter, pt_to_px):
+    """Draw the signature line."""
+    painter.save()
+
+    pen = QPen(Qt.GlobalColor.black)
+    pen.setWidthF(max(1.0, SIG_LINE_WIDTH * pt_to_px))
+    painter.setPen(pen)
+    painter.drawLine(
+        QLineF(
+            SIG_LINE_X1 * pt_to_px,
+            SIG_LINE_Y * pt_to_px,
+            SIG_LINE_X2 * pt_to_px,
+            SIG_LINE_Y * pt_to_px,
+        )
+    )
+
+    painter.restore()
+
+
+def render_pages(pages, printer, copies_only=False, signature_line=True):
     """
     Draw all pages onto QPrinter using QPainter.
 
@@ -273,6 +303,9 @@ def render_pages(pages, printer, copies_only=False):
 
     The AdvMICR font (magnetic ink) is substituted with Courier New since it is
     a speciality font unlikely to be installed on macOS.
+
+    When signature_line is True (the default), a signature line is drawn on
+    every page.  This is not check data — see the SIG_* constants above.
     """
     dpi = printer.resolution()
     pt_to_px = dpi / 72.0  # 1 VB6 point -> this many device pixels
@@ -314,6 +347,9 @@ def render_pages(pages, printer, copies_only=False):
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
                 op["text"],
             )
+
+        if signature_line:
+            _draw_signature_line(painter, pt_to_px)
 
     painter.end()
     return True
@@ -415,6 +451,14 @@ class PrinterWindow(QMainWindow):
 
         self.collate_cb = QCheckBox()
         form.addRow("Collate:", self.collate_cb)
+
+        self.signature_line_cb = QCheckBox()
+        self.signature_line_cb.setChecked(True)
+        self.signature_line_cb.setToolTip(
+            "Draw a signature line on each check. This is not part of the "
+            "check data."
+        )
+        form.addRow("Signature Line:", self.signature_line_cb)
 
         root.addWidget(box)
 
@@ -559,7 +603,12 @@ class PrinterWindow(QMainWindow):
         if dlg.exec() != QPrintDialog.DialogCode.Accepted:
             return
 
-        if not render_pages(pages, self._printer, copies_only=self.copies_only_cb.isChecked()):
+        if not render_pages(
+            pages,
+            self._printer,
+            copies_only=self.copies_only_cb.isChecked(),
+            signature_line=self.signature_line_cb.isChecked(),
+        ):
             QMessageBox.critical(self, "Print Error", "Failed to start the print job.")
         else:
             append_history(metadata)
